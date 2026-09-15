@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6c63ff">
+<title>えいごクエスト</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#f5f6ff;color:#20223a}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;box-shadow:0 0 30px #00000010}
+header{padding:18px 20px 12px;background:linear-gradient(135deg,#7167ff,#8f7cff);color:white;border-radius:0 0 24px 24px}
+.top{display:flex;justify-content:space-between;align-items:center}.logo{font-size:24px;font-weight:900}.stats{display:flex;gap:10px;font-weight:800;font-size:13px}.pill{background:#ffffff25;padding:7px 10px;border-radius:999px}
+main{padding:20px}.screen{display:none}.screen.active{display:block}
+h1{font-size:28px;margin:8px 0}.sub{color:#777b91;font-size:14px}
+.card{background:#f7f7ff;border-radius:22px;padding:20px;margin:18px 0}.hero{background:linear-gradient(135deg,#eef0ff,#faf9ff)}
+button{border:0;border-radius:16px;padding:15px 18px;font-size:16px;font-weight:800;cursor:pointer;width:100%;background:#7167ff;color:white;box-shadow:0 6px 14px #7167ff30}
+button:active{transform:scale(.98)}button.secondary{background:#eeeef8;color:#383a55;box-shadow:none}
+.bigbtn{font-size:18px;padding:18px}.choices{display:grid;gap:11px;margin-top:20px}.choice{background:white;color:#272941;border:2px solid #e5e5f1;box-shadow:none}.choice.correct{border-color:#36b37e;background:#e9fff5}.choice.wrong{border-color:#ff647c;background:#fff0f3}
+.progress{height:9px;background:#e9e9f3;border-radius:99px;overflow:hidden;margin:15px 0}.bar{height:100%;background:#7167ff;width:0;transition:.3s}
+.word{font-size:38px;font-weight:900;text-align:center;margin:28px 0 8px}.meaning{text-align:center;color:#777b91}
+.feedback{text-align:center;font-weight:900;min-height:28px;margin-top:12px}.xp{font-size:18px;font-weight:900}.row{display:flex;gap:10px}.row>*{flex:1}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:#f7f7ff;border-radius:18px;padding:17px}.num{font-size:26px;font-weight:900}.label{font-size:12px;color:#777b91}
+nav{position:sticky;bottom:0;background:#fff;border-top:1px solid #eeeef5;display:flex;padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:6px}nav button{background:none;color:#777b91;box-shadow:none;padding:9px 4px;font-size:12px}nav button.active{color:#7167ff}
+.list{display:grid;gap:9px}.item{display:flex;justify-content:space-between;padding:13px 15px;border-radius:15px;background:#f7f7ff}.empty{text-align:center;color:#999;padding:30px 0}
+.badge{display:inline-block;background:#fff0bd;color:#8b6400;padding:7px 11px;border-radius:99px;font-weight:800;font-size:12px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="top"><div class="logo">⚔️ えいごクエスト</div><div class="stats"><span class="pill">⭐ <span id="xpTop">0</span></span><span class="pill">🪙 <span id="coinTop">0</span></span></div></div></header>
+
+<main>
+<section id="home" class="screen active">
+<div class="card hero"><span class="badge">初心者向け</span><h1>今日も5問だけ！</h1><p class="sub">毎日ちょっとずつ、英語を冒険しよう。</p><button class="bigbtn" onclick="startQuiz()">▶ クエストを始める</button></div>
+<div class="statgrid">
+<div class="stat"><div class="num" id="level">Lv.1</div><div class="label">レベル</div></div>
+<div class="stat"><div class="num" id="streak">🔥 0日</div><div class="label">連続学習</div></div>
+</div>
+<div class="card"><b>🎯 今日の目標</b><p class="sub">5問クリアでコイン +50</p><div class="progress"><div class="bar" id="homeBar"></div></div></div>
+</section>
+
+<section id="quiz" class="screen">
+<div class="row"><div class="sub" id="qCount">1 / 5</div><div class="sub" style="text-align:right">🔥 <span id="combo">0</span> COMBO</div></div>
+<div class="progress"><div class="bar" id="qBar"></div></div>
+<div class="word" id="word">apple</div><div class="meaning" id="hint">日本語の意味を選ぼう</div>
+<div class="choices" id="choices"></div><div class="feedback" id="feedback"></div>
+<button id="nextBtn" class="hidden" onclick="nextQuestion()">次へ →</button>
+</section>
+
+<section id="result" class="screen">
+<div class="card hero" style="text-align:center"><div style="font-size:48px">🏆</div><h1>クエストクリア！</h1><p class="xp">⭐ +<span id="earnedXp">0</span> XP　🪙 +50 コイン</p><p class="sub" id="resultText"></p></div>
+<button class="bigbtn" onclick="startQuiz()">もう一度挑戦</button><br><br><button class="secondary" onclick="show('home')">ホームへ</button>
+</section>
+
+<section id="review" class="screen">
+<h1>📚 苦手リスト</h1><p class="sub">間違えた単語を復習しよう。</p><div id="mistakes" class="list"></div>
+</section>
+
+<section id="stats" class="screen">
+<h1>📊 学習記録</h1><div class="statgrid">
+<div class="stat"><div class="num" id="total">0</div><div class="label">回答数</div></div>
+<div class="stat"><div class="num" id="correct">0</div><div class="label">正解数</div></div>
+<div class="stat"><div class="num" id="accuracy">0%</div><div class="label">正解率</div></div>
+<div class="stat"><div class="num" id="totalXp">0</div><div class="label">総XP</div></div>
+</div><div class="card"><b>💡 ひとこと</b><p class="sub">短時間でも毎日続けることが上達への近道！</p></div>
+</section>
+</main>
+
+<nav>
+<button id="navHome" class="active" onclick="show('home')">🏠<br>ホーム</button>
+<button id="navReview" onclick="show('review')">📚<br>復習</button>
+<button id="navStats" onclick="show('stats')">📊<br>記録</button>
+</nav>
+</div>
+
+<script>
+const questions=[
+["apple","りんご",["りんご","犬","学校","水"]],["book","本",["車","本","猫","家"]],
+["water","水",["水","食べ物","先生","友達"]],["school","学校",["病院","公園","学校","駅"]],
+["friend","友達",["先生","友達","家族","店"]],["happy","幸せな",["悲しい","速い","幸せな","大きい"]],
+["eat","食べる",["見る","食べる","行く","読む"]],["go","行く",["来る","行く","作る","話す"]],
+["small","小さい",["新しい","小さい","古い","長い"]],["morning","朝",["夜","昼","朝","週"]]
+];
+let state=JSON.parse(localStorage.getItem("eigoQuest")||'{"xp":0,"coins":0,"streak":0,"total":0,"correct":0,"mistakes":[]}');
+let quiz=[],qi=0,combo=0,earned=0,answered=false;
+function save(){localStorage.setItem("eigoQuest",JSON.stringify(state));update();}
+function update(){
+ document.getElementById("xpTop").textContent=state.xp;document.getElementById("coinTop").textContent=state.coins;
+ document.getElementById("level").textContent="Lv."+Math.floor(state.xp/100+1);
+ document.getElementById("streak").textContent="🔥 "+state.streak+"日";
+ document.getElementById("total").textContent=state.total;document.getElementById("correct").textContent=state.correct;
+ document.getElementById("accuracy").textContent=(state.total?Math.round(state.correct/state.total*100):0)+"%";
+ document.getElementById("totalXp").textContent=state.xp;
+ document.getElementById("homeBar").style.width=Math.min((state.xp%100),100)+"%";
+ renderMistakes();
+}
+function show(id){
+ document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");
+ document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+ if(id==="home")document.getElementById("navHome").classList.add("active");
+ if(id==="review")document.getElementById("navReview").classList.add("active");
+ if(id==="stats")document.getElementById("navStats").classList.add("active");
+ update();
+}
+function startQuiz(){
+ quiz=[...questions].sort(()=>Math.random()-.5).slice(0,5);qi=0;combo=0;earned=0;show("quiz");renderQ();
+}
+function renderQ(){
+ answered=false;let q=quiz[qi];document.getElementById("qCount").textContent=(qi+1)+" / 5";
+ document.getElementById("qBar").style.width=((qi)/5*100)+"%";document.getElementById("combo").textContent=combo;
+ document.getElementById("word").textContent=q[0];document.getElementById("feedback").textContent="";
+ document.getElementById("nextBtn").classList.add("hidden");
+ let c=document.getElementById("choices");c.innerHTML="";
+ [...q[2]].sort(()=>Math.random()-.5).forEach(a=>{let b=document.createElement("button");b.className="choice";b.textContent=a;b.onclick=()=>answer(a,b);c.appendChild(b)});
+}
+function answer(a,btn){
+ if(answered)return;answered=true;let q=quiz[qi],ok=a===q[1];
+ document.querySelectorAll(".choice").forEach(b=>b.disabled=true);
+ if(ok){btn.classList.add("correct");combo++;let gain=10+Math.max(0,combo-1)*2;state.xp+=gain;earned+=gain;state.correct++;document.getElementById("feedback").textContent="🎉 正解！ +"+gain+" XP";}
+ else{btn.classList.add("wrong");combo=0;state.mistakes=[...new Set([...state.mistakes,q[0]])];document.getElementById("feedback").textContent="😢 正解は「"+q[1]+"」";document.querySelectorAll(".choice").forEach(b=>{if(b.textContent===q[1])b.classList.add("correct")})}
+ state.total++;save();document.getElementById("nextBtn").classList.remove("hidden");
+}
+function nextQuestion(){
+ if(qi<4){qi++;renderQ()}else{state.coins+=50;state.streak+=1;save();document.getElementById("earnedXp").textContent=earned;document.getElementById("resultText").textContent="5問中 "+state.correct+"問正解！"+(combo>=3?" "+combo+"コンボもすごい！":"");show("result")}
+}
+function renderMistakes(){
+ let el=document.getElementById("mistakes");el.innerHTML="";
+ if(!state.mistakes.length){el.innerHTML='<div class="empty">🎉 まだ苦手な単語はありません！</div>';return}
+ state.mistakes.forEach(w=>{let q=questions.find(x=>x[0]===w);if(!q)return;let d=document.createElement("div");d.className="item";d.innerHTML="<b>"+q[0]+"</b><span>"+q[1]+"</span>";el.appendChild(d)})
+}
+update();
+</script>
+</body>
+</html>
